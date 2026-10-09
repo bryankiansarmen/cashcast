@@ -52,13 +52,3 @@ export function forecast(
     totalOpenCents,
   };
 }
-
-export const forecastAll = (
-  invoices: readonly Invoice[],
-  assumptions: Assumptions,
-  asOf: IsoDate,
-): Record<ScenarioId, ForecastResult> => ({
-  best: forecast(invoices, assumptions, "best", asOf),
-  expected: forecast(invoices, assumptions, "expected", asOf),
-  worst: forecast(invoices, assumptions, "worst", asOf),
-});

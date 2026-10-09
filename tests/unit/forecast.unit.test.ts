@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CURVES } from "../../src/engine/curves";
-import { distribute, forecast, forecastAll } from "../../src/engine/forecast";
+import { distribute, forecast } from "../../src/engine/forecast";
+import { forecastAll } from "../../src/engine/forecast-all";
 import { DEFAULT_SCENARIOS } from "../../src/engine/scenarios";
 import type { Assumptions, Invoice } from "../../src/engine/types";
 
@@ -116,7 +117,8 @@ describe("forecast", () => {
 
   it("is identical across repeated calls and forecastAll matches forecast", () => {
     expect(forecast(inv, a, "worst", asOf)).toEqual(forecast(inv, a, "worst", asOf));
-    const all = forecastAll(inv, a, asOf);
+    const { results: all, failures } = forecastAll(inv, a, asOf);
+    expect(failures).toEqual([]);
     expect(all.best).toEqual(forecast(inv, a, "best", asOf));
     expect(all.worst).toEqual(forecast(inv, a, "worst", asOf));
     expect(all.expected.scenario).toBe("expected");
