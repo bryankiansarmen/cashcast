@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CURVES } from "../../src/engine/curves";
-import { distribute } from "../../src/engine/forecast";
+import { distribute, forecast, forecastAll } from "../../src/engine/forecast";
 import { DEFAULT_SCENARIOS } from "../../src/engine/scenarios";
 import type { Assumptions, Invoice } from "../../src/engine/types";
 
@@ -81,5 +81,44 @@ describe("distribute: edges", () => {
     expect(distribute(A, assumptions(), "best", asOf)).toEqual(
       distribute(A, assumptions(), "best", asOf),
     );
+  });
+});
+
+describe("forecast", () => {
+  const inv = [A, B];
+  const a = assumptions({ beta: { delayWeeks: 1 } });
+
+  it("matches the worked-example weekly table and totals", () => {
+    const r = forecast(inv, a, "expected", asOf);
+    expect(r.weeks.map((w) => w.inflowCents / 100).map((d) => Math.round(d))).toEqual([
+      3000, 2000, 9200, 4800, 2900, 1900, 1200, 700, 400, 200, 0, 0, 0,
+    ]);
+    expect(r.weeks[9].cumulativeCents / 100).toBeCloseTo(26_300, 6);
+    expect(r.uncollectedCents / 100).toBeCloseTo(3700, 6);
+    expect(r.totalOpenCents).toBe(3_000_000);
+    expect(r).toMatchObject({ asOf, scenario: "expected" });
+  });
+
+  it("carries week numbers, start and end dates", () => {
+    const r = forecast(inv, a, "expected", asOf);
+    expect(r.weeks).toHaveLength(13);
+    expect(r.weeks[0]).toMatchObject({ week: 1, start: "2026-10-01", end: "2026-10-07" });
+    expect(r.weeks[12]).toMatchObject({ week: 13, start: "2026-12-24", end: "2026-12-30" });
+  });
+
+  it("gives 13 zero weeks for an empty invoice list", () => {
+    const r = forecast([], a, "expected", asOf);
+    expect(r.weeks).toHaveLength(13);
+    expect(r.weeks.every((w) => w.inflowCents === 0 && w.cumulativeCents === 0)).toBe(true);
+    expect(r.uncollectedCents).toBe(0);
+    expect(r.totalOpenCents).toBe(0);
+  });
+
+  it("is identical across repeated calls and forecastAll matches forecast", () => {
+    expect(forecast(inv, a, "worst", asOf)).toEqual(forecast(inv, a, "worst", asOf));
+    const all = forecastAll(inv, a, asOf);
+    expect(all.best).toEqual(forecast(inv, a, "best", asOf));
+    expect(all.worst).toEqual(forecast(inv, a, "worst", asOf));
+    expect(all.expected.scenario).toBe("expected");
   });
 });

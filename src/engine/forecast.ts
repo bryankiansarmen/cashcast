@@ -1,6 +1,7 @@
 import { classify } from "./aging";
 import { CURVE_LENGTH } from "./curves";
-import type { Assumptions, Invoice, IsoDate, ScenarioId } from "./types";
+import { weekRange } from "./dates";
+import type { Assumptions, ForecastResult, Invoice, IsoDate, ScenarioId } from "./types";
 
 export const HORIZON_WEEKS = 13;
 
@@ -25,3 +26,39 @@ export function distribute(
   }
   return weeks;
 }
+
+export function forecast(
+  invoices: readonly Invoice[],
+  assumptions: Assumptions,
+  scenario: ScenarioId,
+  asOf: IsoDate,
+): ForecastResult {
+  const inflows = new Array<number>(HORIZON_WEEKS).fill(0);
+  let totalOpenCents = 0;
+  for (const invoice of invoices) {
+    totalOpenCents += invoice.openCents;
+    distribute(invoice, assumptions, scenario, asOf).forEach((v, i) => (inflows[i] += v));
+  }
+  let cumulativeCents = 0;
+  const weeks = inflows.map((inflowCents, i) => {
+    cumulativeCents += inflowCents;
+    return { week: i + 1, ...weekRange(asOf, i + 1), inflowCents, cumulativeCents };
+  });
+  return {
+    asOf,
+    scenario,
+    weeks,
+    uncollectedCents: totalOpenCents - cumulativeCents,
+    totalOpenCents,
+  };
+}
+
+export const forecastAll = (
+  invoices: readonly Invoice[],
+  assumptions: Assumptions,
+  asOf: IsoDate,
+): Record<ScenarioId, ForecastResult> => ({
+  best: forecast(invoices, assumptions, "best", asOf),
+  expected: forecast(invoices, assumptions, "expected", asOf),
+  worst: forecast(invoices, assumptions, "worst", asOf),
+});
