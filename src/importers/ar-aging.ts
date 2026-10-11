@@ -23,6 +23,9 @@ export const AR_FIELDS: Record<
   },
 };
 
+/** Trimmed, single-spaced customer name; its lowercase form is the customerKey shared by every importer. */
+export const cleanName = (name: string) => name.trim().replace(/\s+/g, " ");
+
 // Whole-dollar grouping from integer cents; no rounding happens here.
 const usd = (cents: number) =>
   `$${Math.trunc(cents / 100).toLocaleString("en-US")}.${String(cents % 100).padStart(2, "0")}`;
@@ -51,7 +54,7 @@ export function importArAging(text: string, asOf: IsoDate): ImportResult<Invoice
     const rowErrors: ImportIssue[] = [];
     const bad = (column: string, message: string) => rowErrors.push({ line, column, message });
 
-    const customerName = cell(c.customer).replace(/\s+/g, " ");
+    const customerName = cleanName(cell(c.customer));
     if (!customerName) bad("customer", "Customer name is empty.");
 
     let dueDate: IsoDate | undefined;
