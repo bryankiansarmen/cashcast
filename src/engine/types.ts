@@ -36,3 +36,9 @@ export interface ForecastResult {
   uncollectedCents: number;
   totalOpenCents: number;
 }
+
+export interface PaidInvoice {
+  customerKey: string;
+  dueDate: IsoDate;
+  paidDate: IsoDate;
+}

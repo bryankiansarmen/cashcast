@@ -1,5 +1,6 @@
 export * from "./aging";
 export * from "./curves";
+export * from "./customers";
 export * from "./dates";
 export * from "./forecast";
 export * from "./forecast-all";

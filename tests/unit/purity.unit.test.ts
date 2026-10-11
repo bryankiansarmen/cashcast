@@ -24,8 +24,16 @@ const results = engine.forecastAll(invoices, assumptions, asOf).results;
 // One call per public engine function. The coverage test below fails when a function is added without an entry.
 const calls: Record<string, () => unknown> = {
   addDays: () => engine.addDays(asOf, 3),
+  applyDerivedDelays: () =>
+    engine.applyDerivedDelays(assumptions, {
+      acme: { delayWeeks: 1, paidCount: 3, insufficientHistory: false },
+    }),
   agingSummary: () => engine.agingSummary(invoices, asOf),
   classify: () => engine.classify(invoices[0], asOf),
+  deriveCustomerDelays: () =>
+    engine.deriveCustomerDelays([
+      { customerKey: "acme", dueDate: "2026-01-01", paidDate: "2026-01-09" },
+    ]),
   diffDays: () => engine.diffDays(asOf, "2026-09-01"),
   distribute: () => engine.distribute(invoices[0], assumptions, "expected", asOf),
   forecast: () => engine.forecast(invoices, assumptions, "expected", asOf),
