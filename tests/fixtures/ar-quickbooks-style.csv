@@ -1,0 +1,6 @@
+Type,Date,Num,Customer,Due Date,Past Due,Open Balance
+Invoice,8/15/2026,1001,Harbor Logistics,9/14/2026,16,"$12,450.00"
+Invoice,9/1/2026,1002,Harbor Logistics,10/1/2026,,"$3,200.50"
+Invoice,7/10/2026,1003,Northwind Supply,8/9/2026,52,"$8,900.00"
+Invoice,9/20/2026,1004,Alder & Pine LLC,10/20/2026,,"$21,000.00"
+Invoice,5/2/2026,1005,Quarry Street Cafe,6/1/2026,121,$975.25

@@ -1,0 +1,10 @@
+Customer,Num,Due Date,Open Balance
+Harbor Logistics,1001,2026-09-14,1200.00
+,1002,2026-09-20,500.00
+Northwind Supply,1003,,800.00
+Alder Pine,1004,2026-02-30,300.00
+Quarry Street,1005,2026-10-01,0.00
+Blue Heron,1006,2026-10-05,abc
+Cedar Row,1007,2026-10-09,"1,234.567"
+Maple Court,1008,13/45/2026,400.00
+Valid Customer,1009,2026-10-15,250.00
