@@ -1,4 +1,4 @@
-import { useMemo, type Dispatch } from "react";
+import { useMemo, useState, type Dispatch } from "react";
 import type { Action, State } from "../../state/store";
 import { MAX_UPLOAD_BYTES, oversizeMessage } from "../../state/store";
 import { buildAgingView } from "../../viewmodels/aging-view";
@@ -6,6 +6,7 @@ import { buildForecastView } from "../../viewmodels/forecast-view";
 import AgingSummary from "../components/AgingSummary";
 import Banner from "../components/Banner";
 import AsOfControl from "../components/AsOfControl";
+import AssumptionEditor from "../components/AssumptionEditor";
 import Card from "../components/Card";
 import FileDropzone from "../components/FileDropzone";
 import ForecastSection from "../components/ForecastSection";
@@ -22,6 +23,7 @@ export default function ForecastPage({
   dispatch: Dispatch<Action>;
 }) {
   const { report } = state;
+  const [storageNoticeOpen, setStorageNoticeOpen] = useState(true);
   const forecast = useMemo(
     () =>
       buildForecastView(
@@ -45,6 +47,15 @@ export default function ForecastPage({
   return (
     <div className="page">
       <h1>Forecast</h1>
+      {state.storageUnavailable && storageNoticeOpen && (
+        <Banner
+          kind="info"
+          action={{ label: "Dismiss", onClick: () => setStorageNoticeOpen(false) }}
+        >
+          Your browser is blocking storage, so changes to assumptions will not be saved after you
+          close this page.
+        </Banner>
+      )}
       {state.source === "sample" && (
         <Banner kind="info">
           Showing sample data: fictional customers, as of {state.asOf}. Import your own AR aging
@@ -93,6 +104,7 @@ export default function ForecastPage({
           onSelectScenario={(scenario) => dispatch({ type: "selectScenario", scenario })}
         />
       )}
+      <AssumptionEditor state={state} dispatch={dispatch} />
       <AgingSummary view={aging} onLoadSample={() => dispatch({ type: "loadSample" })} />
     </div>
   );

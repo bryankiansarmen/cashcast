@@ -21,12 +21,15 @@ export function validateCurve(curve: Curve, label = "Curve"): string[] {
   const errors: string[] = [];
   curve.forEach((v, i) => {
     if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 1) {
-      errors.push(`${label} week ${i + 1} must be a number between 0 and 1.`);
+      errors.push(`${label} week ${i + 1} must be a number from 0% to 100%.`);
     }
   });
   if (errors.length) return errors;
   const sum = curve.reduce((a, b) => a + b, 0);
-  if (sum > 1 + SUM_TOLERANCE)
-    errors.push(`${label} values add up to ${sum.toFixed(2)}; the total must be at most 1.`);
+  if (sum > 1 + SUM_TOLERANCE) {
+    errors.push(
+      `${label} values add up to ${(sum * 100).toFixed(1)}%; the total must be at most 100%.`,
+    );
+  }
   return errors;
 }

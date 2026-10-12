@@ -20,3 +20,6 @@ export const formatPercent = (ratio: number, decimals = 0): string =>
     maximumFractionDigits: decimals,
     signDisplay: "negative",
   }).format(ratio);
+
+/** Text for a percent input from a ratio: 0.125 gives "12.5", 0.4 gives "40" (two decimals at most). */
+export const percentInputText = (ratio: number): string => String(Number((ratio * 100).toFixed(2)));
