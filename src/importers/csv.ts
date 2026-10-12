@@ -12,6 +12,8 @@ function detectDelimiter(text: string): string {
   return DELIMITERS.reduce((best, d) => (count(d) > count(best) ? d : best));
 }
 
+export const oversizeMessage = `File is larger than ${MAX_BYTES / 1024 / 1024} MB.`;
+
 export interface CsvRow {
   line: number; // file line number; the header is line 1
   cells: string[];
@@ -28,7 +30,7 @@ export interface CsvTable {
  */
 export function readCsv(text: string): ImportResult<CsvTable> {
   if (new TextEncoder().encode(text).length > MAX_BYTES) {
-    return importError(`File is larger than ${MAX_BYTES / 1024 / 1024} MB.`);
+    return importError(oversizeMessage);
   }
   const clean = text.replace(/^﻿/, "");
   const parsed = Papa.parse<string[]>(clean, {

@@ -1,17 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../support/test";
 
 test.use({ colorScheme: "light" });
-
-// Any console error or uncaught exception fails the test that caused it.
-const problems: string[] = [];
-test.beforeEach(({ page }) => {
-  problems.length = 0;
-  page.on("console", (m) => m.type() === "error" && problems.push(`console error: ${m.text()}`));
-  page.on("pageerror", (e) => problems.push(`uncaught: ${e.message}`));
-});
-test.afterEach(() => {
-  expect(problems).toEqual([]);
-});
 
 test("app loads on the forecast page", async ({ page }) => {
   await page.goto("/");
