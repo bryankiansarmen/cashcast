@@ -1,0 +1,65 @@
+/* Design tokens. Contrast of every text/background pairing is enforced by tests/unit/contrast.unit.test.ts.
+   The dark palette appears twice (system preference and explicit choice); the same test keeps the copies equal. */
+:root {
+  color-scheme: light;
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-text: #1b2430;
+  --color-muted: #5b6676;
+  --color-border: #dfe3ea;
+  --color-accent: #1f6f6b;
+  --color-accent-contrast: #ffffff;
+  --color-good: #1f7a4d;
+  --color-warn: #9a6700;
+  --color-bad: #b42318;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-card: 8px;
+  --radius-pill: 999px;
+  --content-max: 1200px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg: #0f1419;
+    --color-surface: #171d25;
+    --color-text: #e6eaf0;
+    --color-muted: #9aa6b5;
+    --color-border: #2a323d;
+    --color-accent: #5fc2bb;
+    --color-accent-contrast: #0f1419;
+    --color-good: #5bc48a;
+    --color-warn: #e0a93b;
+    --color-bad: #f08a80;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f1419;
+  --color-surface: #171d25;
+  --color-text: #e6eaf0;
+  --color-muted: #9aa6b5;
+  --color-border: #2a323d;
+  --color-accent: #5fc2bb;
+  --color-accent-contrast: #0f1419;
+  --color-good: #5bc48a;
+  --color-warn: #e0a93b;
+  --color-bad: #f08a80;
+}

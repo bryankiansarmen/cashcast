@@ -1,3 +1,11 @@
+import AppShell from "./components/AppShell";
+import BudgetPage from "./pages/BudgetPage";
+import ForecastPage from "./pages/ForecastPage";
+import { useHashRoute } from "./use-hash-route";
+
 export default function App() {
-  return <h1>CashCast</h1>;
+  const route = useHashRoute();
+  return (
+    <AppShell route={route}>{route === "budget" ? <BudgetPage /> : <ForecastPage />}</AppShell>
+  );
 }
