@@ -2,6 +2,7 @@ import type { Dispatch } from "react";
 import type { Action, State } from "../../state/store";
 import { MAX_UPLOAD_BYTES, oversizeMessage } from "../../state/store";
 import Banner from "../components/Banner";
+import AsOfControl from "../components/AsOfControl";
 import Card from "../components/Card";
 import FileDropzone from "../components/FileDropzone";
 import ImportReport from "../components/ImportReport";
@@ -36,6 +37,11 @@ export default function ForecastPage({
           {state.invoices.length} invoices as of {state.asOf}
           {state.history.length > 0 && `, with ${state.history.length} paid invoices of history`}.
         </p>
+        <AsOfControl
+          value={state.asOf}
+          locked={state.source === "sample"}
+          onChange={(asOf) => dispatch({ type: "setAsOf", asOf })}
+        />
         <div className="drop-grid">
           <FileDropzone
             label="AR aging CSV"

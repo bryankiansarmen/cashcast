@@ -130,6 +130,14 @@ describe("other actions", () => {
     });
   });
 
+  it.each(["", "2026-02-30", "not a date", "275760-09-13", "9/30/2026"])(
+    "setAsOf ignores %j",
+    (bad) => {
+      const base = initialState();
+      expect(reducer(base, { type: "setAsOf", asOf: bad })).toBe(base);
+    },
+  );
+
   it("loadSample restores the sample after an import", () => {
     const imported = importAr(initialState(), quickbooks);
     const s = reducer(imported, { type: "loadSample" });

@@ -52,3 +52,16 @@ test("a dark system preference is followed when nothing is saved", async ({ brow
   );
   await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
 });
+
+test("the privacy notice is shown, states what is stored, and can be dismissed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const notice = page.getByRole("status").filter({ hasText: "Your data stays in this browser" });
+  await expect(notice).toContainText("never uploaded");
+  await expect(notice).toContainText("Only your assumptions and theme choice are saved");
+  await page.getByRole("link", { name: "Budget" }).click();
+  await expect(notice).toBeVisible(); // it lives in the shell, so it follows you between pages
+  await notice.getByRole("button", { name: "Dismiss" }).click();
+  await expect(notice).toHaveCount(0);
+});

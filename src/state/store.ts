@@ -1,4 +1,5 @@
 import { DEFAULT_CURVES } from "../engine/curves";
+import { parseDate } from "../engine/dates";
 import { DEFAULT_SCENARIOS } from "../engine/scenarios";
 import type { Assumptions, Invoice, IsoDate, PaidInvoice, ScenarioId } from "../engine/types";
 import { importArAging as parseArAging } from "../importers/ar-aging";
@@ -42,6 +43,11 @@ export type Action =
   | { type: "setAsOf"; asOf: IsoDate }
   | { type: "selectScenario"; scenario: ScenarioId }
   | { type: "resetAll" };
+
+const isIsoDate = (s: string) => {
+  const d = parseDate(s);
+  return d.ok && d.value === s;
+};
 
 const defaultAssumptions = (): Assumptions => ({
   version: 1,
@@ -96,7 +102,8 @@ export function reducer(state: State, action: Action): State {
         },
       };
     case "setAsOf":
-      return { ...state, asOf: action.asOf };
+      // Only a real calendar date in ISO form is accepted; anything else leaves the as-of date unchanged.
+      return isIsoDate(action.asOf) ? { ...state, asOf: action.asOf } : state;
     case "selectScenario":
       return { ...state, scenario: action.scenario };
     case "resetAll":

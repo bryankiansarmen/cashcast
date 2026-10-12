@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Route } from "../use-hash-route";
 import { useTheme } from "../use-theme";
+import PrivacyNotice from "./PrivacyNotice";
 
 const TABS: { route: Route; label: string }[] = [
   { route: "forecast", label: "Forecast" },
@@ -30,7 +31,12 @@ export default function AppShell({ route, children }: { route: Route; children: 
           Switch to {next} theme
         </button>
       </header>
-      <main className="content">{children}</main>
+      <main className="content">
+        <div className="page">
+          <PrivacyNotice />
+          {children}
+        </div>
+      </main>
     </>
   );
 }

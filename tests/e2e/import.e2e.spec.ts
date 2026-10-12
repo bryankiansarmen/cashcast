@@ -49,13 +49,11 @@ test("warnings from a successful import are listed", async ({ page }) => {
 
 test("a file over 5 MB is rejected with the size message and the data stays", async ({ page }) => {
   await page.goto("/");
-  await page
-    .getByTestId(AR)
-    .setInputFiles({
-      name: "huge.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.alloc(5 * 1024 * 1024 + 1, "a"),
-    });
+  await page.getByTestId(AR).setInputFiles({
+    name: "huge.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.alloc(5 * 1024 * 1024 + 1, "a"),
+  });
   await expect(page.getByRole("region", { name: "Import errors" })).toContainText(
     "File is larger than 5 MB.",
   );
@@ -86,4 +84,20 @@ test("sorting an error table from the keyboard", async ({ page }) => {
     "descending",
   );
   await expect(errors.getByRole("row").nth(1)).toContainText("9");
+});
+
+test("the as-of date is locked for sample data, then editable after an import", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const asOf = page.getByLabel("As-of date");
+  await expect(asOf).toHaveValue("2026-09-30");
+  await expect(asOf).toBeDisabled();
+
+  await page.getByTestId(AR).setInputFiles(fixture("ar-quickbooks-style.csv"));
+  await expect(asOf).toBeEnabled();
+  await expect(asOf).toHaveValue(/^\d{4}-\d{2}-\d{2}$/); // today's local date by default
+
+  await asOf.fill("2026-11-01");
+  await expect(page.getByText("5 invoices as of 2026-11-01")).toBeVisible();
 });
