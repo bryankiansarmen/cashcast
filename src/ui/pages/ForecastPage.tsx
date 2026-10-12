@@ -1,6 +1,8 @@
-import type { Dispatch } from "react";
+import { useMemo, type Dispatch } from "react";
 import type { Action, State } from "../../state/store";
 import { MAX_UPLOAD_BYTES, oversizeMessage } from "../../state/store";
+import { buildAgingView } from "../../viewmodels/aging-view";
+import AgingSummary from "../components/AgingSummary";
 import Banner from "../components/Banner";
 import AsOfControl from "../components/AsOfControl";
 import Card from "../components/Card";
@@ -18,6 +20,10 @@ export default function ForecastPage({
   dispatch: Dispatch<Action>;
 }) {
   const { report } = state;
+  const aging = useMemo(
+    () => buildAgingView(state.invoices, state.asOf),
+    [state.invoices, state.asOf],
+  );
   const statusFor = (kind: "ar" | "history") =>
     report?.kind === kind ? (report.ok ? "success" : "error") : undefined;
   // Sample data keeps its fixed date; a first import defaults to today, later imports keep the chosen date.
@@ -68,6 +74,7 @@ export default function ForecastPage({
         </div>
       </Card>
       {report && <ImportReport report={report} />}
+      <AgingSummary view={aging} onLoadSample={() => dispatch({ type: "loadSample" })} />
     </div>
   );
 }

@@ -287,3 +287,18 @@ input[type="date"] {
   color: var(--color-text);
   font: inherit;
 }
+
+.metric-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 640px) {
+  .metric-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 1024px) {
+  .metric-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

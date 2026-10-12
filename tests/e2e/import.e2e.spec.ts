@@ -101,3 +101,34 @@ test("the as-of date is locked for sample data, then editable after an import", 
   await asOf.fill("2026-11-01");
   await expect(page.getByText("5 invoices as of 2026-11-01")).toBeVisible();
 });
+
+test("the aging summary shows the sample totals and re-sorts the customer table", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByText("$1,534,534", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("60 invoices across 12 customers")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Aging by bucket" }).getByRole("row")).toHaveCount(
+    6,
+  );
+  await expect(page.getByRole("region", { name: "Aging by bucket" })).toContainText(/\d+\.\d%/);
+
+  const customers = page.getByRole("region", { name: "Aging by customer" });
+  await expect(customers.getByRole("row")).toHaveCount(13);
+  await expect(customers.getByRole("columnheader", { name: /Total/ })).toHaveAttribute(
+    "aria-sort",
+    "descending",
+  );
+  await customers.getByRole("button", { name: /^91\+/ }).click();
+  await expect(customers.getByRole("columnheader", { name: /91\+/ })).toHaveAttribute(
+    "aria-sort",
+    "ascending",
+  );
+});
+
+test("importing replaces the aging summary", async ({ page }) => {
+  await page.goto("/");
+  await page.getByTestId(AR).setInputFiles(fixture("ar-quickbooks-style.csv"));
+  await expect(page.getByText("5 invoices across 4 customers")).toBeVisible();
+  await expect(page.getByText("$46,526", { exact: true }).first()).toBeVisible();
+});
