@@ -2,11 +2,13 @@ import { useMemo, type Dispatch } from "react";
 import type { Action, State } from "../../state/store";
 import { MAX_UPLOAD_BYTES, oversizeMessage } from "../../state/store";
 import { buildAgingView } from "../../viewmodels/aging-view";
+import { buildForecastView } from "../../viewmodels/forecast-view";
 import AgingSummary from "../components/AgingSummary";
 import Banner from "../components/Banner";
 import AsOfControl from "../components/AsOfControl";
 import Card from "../components/Card";
 import FileDropzone from "../components/FileDropzone";
+import ForecastSection from "../components/ForecastSection";
 import ImportReport from "../components/ImportReport";
 
 // Local calendar date as YYYY-MM-DD (the en-CA locale prints ISO order).
@@ -20,6 +22,17 @@ export default function ForecastPage({
   dispatch: Dispatch<Action>;
 }) {
   const { report } = state;
+  const forecast = useMemo(
+    () =>
+      buildForecastView(
+        state.invoices,
+        state.history,
+        state.assumptions,
+        state.asOf,
+        state.scenario,
+      ),
+    [state.invoices, state.history, state.assumptions, state.asOf, state.scenario],
+  );
   const aging = useMemo(
     () => buildAgingView(state.invoices, state.asOf),
     [state.invoices, state.asOf],
@@ -74,6 +87,12 @@ export default function ForecastPage({
         </div>
       </Card>
       {report && <ImportReport report={report} />}
+      {state.invoices.length > 0 && (
+        <ForecastSection
+          view={forecast}
+          onSelectScenario={(scenario) => dispatch({ type: "selectScenario", scenario })}
+        />
+      )}
       <AgingSummary view={aging} onLoadSample={() => dispatch({ type: "loadSample" })} />
     </div>
   );

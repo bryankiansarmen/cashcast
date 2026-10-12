@@ -5,7 +5,7 @@ test.use({ colorScheme: "light" });
 test("app loads on the forecast page", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("CashCast", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Forecast" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forecast", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Forecast" })).toHaveAttribute(
     "aria-current",
     "page",
@@ -16,16 +16,16 @@ test("tabs switch pages through the URL hash", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Budget" }).click();
   await expect(page).toHaveURL(/#\/budget$/);
-  await expect(page.getByRole("heading", { name: "Budget" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Budget", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Budget" })).toHaveAttribute("aria-current", "page");
   await page.getByRole("link", { name: "Forecast" }).click();
   await expect(page).toHaveURL(/#\/forecast$/);
-  await expect(page.getByRole("heading", { name: "Forecast" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Forecast", exact: true })).toBeVisible();
 });
 
 test("a direct visit to #/budget opens the budget page", async ({ page }) => {
   await page.goto("/#/budget");
-  await expect(page.getByRole("heading", { name: "Budget" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Budget", exact: true })).toBeVisible();
 });
 
 test("theme follows the system and the toggle persists across reloads", async ({ page }) => {
