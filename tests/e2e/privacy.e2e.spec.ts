@@ -125,3 +125,24 @@ test("the network guard really fails a test that reaches outside", async ({ page
   await page.goto("/");
   await page.evaluate(() => fetch("https://example.com/track").catch(() => undefined));
 });
+
+test("the page ships a content security policy, and a full journey violates none of it", async ({
+  page,
+}) => {
+  const violations: string[] = [];
+  await page.exposeFunction("reportCsp", (m: string) => violations.push(m));
+  await page.addInitScript(() => {
+    document.addEventListener("securitypolicyviolation", (e) => {
+      void (window as unknown as { reportCsp: (m: string) => void }).reportCsp(
+        `${e.violatedDirective}: ${e.blockedURI}`,
+      );
+    });
+  });
+  await journey(page);
+  const policy = await page
+    .locator('meta[http-equiv="Content-Security-Policy"]')
+    .getAttribute("content");
+  expect(policy).toContain("script-src 'self'");
+  expect(policy).toContain("connect-src 'self'");
+  expect(violations).toEqual([]);
+});

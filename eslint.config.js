@@ -7,7 +7,16 @@ const ban = (names, message) => ({
 const rel = (...dirs) => dirs.flatMap((d) => [`**/${d}`, `**/${d}/**`]);
 
 export default tseslint.config(
-  { ignores: ["dist", "coverage", "node_modules", "playwright-report", "test-results"] },
+  {
+    ignores: [
+      "dist",
+      "dist-pages",
+      "coverage",
+      "node_modules",
+      "playwright-report",
+      "test-results",
+    ],
+  },
   ...tseslint.configs.recommended,
   prettier,
   {

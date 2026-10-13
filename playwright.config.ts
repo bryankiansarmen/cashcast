@@ -8,6 +8,7 @@ export default defineConfig({
   webServer: {
     command: "npm run build && npm run preview",
     url: "http://localhost:4173",
+    timeout: 240_000, // the build runs first, and is slow on some disks
     reuseExistingServer: true,
   },
 });

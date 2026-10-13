@@ -152,6 +152,7 @@ test.describe("keyboard", () => {
 
   test("Shift+Tab walks back to the previous stop", async ({ page }) => {
     await page.goto("/");
+    await expect(page.locator(".metric-value").first()).toBeVisible(); // keys pressed before the app renders go nowhere
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Budget" })).toBeFocused();
