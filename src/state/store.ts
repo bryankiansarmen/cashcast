@@ -1,3 +1,4 @@
+import { validateRule } from "../budget/categorize";
 import type { Budget, CategoryRule, Transaction } from "../budget/types";
 import { monthsOf } from "../budget/variance";
 import { DEFAULT_CURVES, validateCurve } from "../engine/curves";
@@ -25,6 +26,7 @@ import { SAMPLE_AS_OF } from "../sample/constants";
 export const MAX_UPLOAD_BYTES = MAX_BYTES;
 export { oversizeMessage };
 export type { ImportIssue };
+export type { CategoryRule };
 
 export type ImportKind = "ar" | "history" | "transactions";
 
@@ -59,6 +61,8 @@ export interface State {
   budgetReport: ImportReportData | null;
   /** Inline messages for rejected budget target edits, keyed `target.<category>`. */
   budgetErrors: Record<string, string>;
+  /** Inline messages for rejected rule edits, keyed `rule.<id>.<field>`. */
+  ruleErrors: Record<string, string>;
 }
 
 export type Action =
@@ -79,6 +83,10 @@ export type Action =
   | { type: "importTransactions"; text: string; fileName: string }
   | { type: "setBudgetTarget"; category: string; text: string }
   | { type: "selectMonth"; month: string }
+  | { type: "addRule"; contains: string; category: string }
+  | { type: "updateRule"; id: string; field: "contains" | "category"; text: string }
+  | { type: "moveRule"; id: string; direction: "up" | "down" }
+  | { type: "deleteRule"; id: string }
   | { type: "loadBudgetSample" }
   | { type: "resetBudgetTargets" }
   | { type: "resetAssumptions" }
@@ -98,6 +106,9 @@ export const defaultAssumptions = (): Assumptions => ({
 });
 
 const sampleBudget = (): Budget => ({ monthlyCents: { ...SAMPLE_BUDGET.monthlyCents } });
+/** The next free `rule-<n>` id. */
+const nextRuleId = (rules: readonly CategoryRule[]): string =>
+  `rule-${Math.max(0, ...rules.map((r) => Number(/^rule-(\d+)$/.exec(r.id)?.[1] ?? 0))) + 1}`;
 const latestMonth = (txs: readonly Transaction[]): string => monthsOf(txs).at(-1) ?? "";
 
 /** First visit: the seeded sample dataset is already loaded. */
@@ -118,6 +129,7 @@ export const initialState = (): State => ({
   txSource: "sample",
   budgetReport: null,
   budgetErrors: {},
+  ruleErrors: {},
 });
 
 const report = <T>(kind: ImportKind, fileName: string, r: ImportResult<T[]>): ImportReportData =>
@@ -233,6 +245,48 @@ export function reducer(state: State, action: Action): State {
         txSource: "sample",
         budgetReport: null,
         budgetErrors: {},
+        ruleErrors: {},
+      };
+    }
+    case "addRule": {
+      const rule = { contains: action.contains.trim(), category: action.category.trim() };
+      const [problem] = validateRule(rule);
+      if (problem) return { ...state, ruleErrors: { ...state.ruleErrors, new: problem } };
+      return {
+        ...state,
+        rules: [...state.rules, { id: nextRuleId(state.rules), ...rule }],
+        ruleErrors: without(state.ruleErrors, "new"),
+      };
+    }
+    case "updateRule": {
+      const current = state.rules.find((r) => r.id === action.id);
+      if (!current) return state;
+      const key = `rule.${action.id}.${action.field}`;
+      const candidate = { ...current, [action.field]: action.text.trim() };
+      const [problem] = validateRule(candidate); // the other field was already valid, so any problem is this one's
+      if (problem) return { ...state, ruleErrors: { ...state.ruleErrors, [key]: problem } };
+      return {
+        ...state,
+        rules: state.rules.map((r) => (r.id === action.id ? candidate : r)),
+        ruleErrors: without(state.ruleErrors, key),
+      };
+    }
+    case "moveRule": {
+      const from = state.rules.findIndex((r) => r.id === action.id);
+      const to = action.direction === "up" ? from - 1 : from + 1;
+      if (from < 0 || to < 0 || to >= state.rules.length) return state;
+      const rules = [...state.rules];
+      [rules[from], rules[to]] = [rules[to], rules[from]];
+      return { ...state, rules };
+    }
+    case "deleteRule": {
+      const prefix = `rule.${action.id}.`;
+      return {
+        ...state,
+        rules: state.rules.filter((r) => r.id !== action.id),
+        ruleErrors: Object.fromEntries(
+          Object.entries(state.ruleErrors).filter(([k]) => !k.startsWith(prefix)),
+        ),
       };
     }
     case "resetBudgetTargets":

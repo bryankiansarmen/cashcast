@@ -9,6 +9,7 @@ import {
   buildBudgetView,
   monthLabel,
   STATUS_DISPLAY,
+  suggestMatchText,
 } from "../../src/viewmodels/budget-view";
 import { EXPLAIN, EXPLAIN_IDS, explainView } from "../../src/viewmodels/explain";
 import { dollarsInputText } from "../../src/viewmodels/format";
@@ -118,6 +119,67 @@ describe("buildBudgetView", () => {
   });
 });
 
+describe("uncategorized queue and category suggestions", () => {
+  it("lists the month's uncategorized transactions oldest first, with a suggested match text", () => {
+    const sep = view().uncategorized;
+    expect(sep).toHaveLength(1);
+    expect(sep[0]).toMatchObject({
+      amountCents: expect.any(Number),
+      suggestedContains: expect.any(String),
+    });
+    expect(sep[0].amountCents).toBeLessThan(0);
+    expect(sep.map((r) => r.date)).toEqual([...sep.map((r) => r.date)].sort());
+    expect(view("2026-07").uncategorized.length).toBe(2);
+  });
+
+  it("only the transactions with no CSV category and no matching rule are queued", () => {
+    const queued = view("2026-07").uncategorized;
+    expect(queued.every((r) => /Zeta|ATM/.test(r.description))).toBe(true);
+    expect(queued.reduce((s, r) => s - r.amountCents, 0)).toBe(23_042); // the July Uncategorized spend
+  });
+
+  it("a rule made from a queued transaction empties the queue of everything it matches", () => {
+    const july = view("2026-07").uncategorized;
+    const text = july[0].suggestedContains;
+    const after = buildBudgetView(
+      txs,
+      [...SAMPLE_RULES, { id: "x", contains: text, category: "Supplies" }],
+      SAMPLE_BUDGET,
+      "2026-07",
+    );
+    const matching = july.filter((r) => r.description.toLowerCase().includes(text.toLowerCase()));
+    expect(matching.length).toBeGreaterThan(0);
+    expect(after.uncategorized).toHaveLength(july.length - matching.length);
+    expect(after.rows.find((r) => r.category === "Supplies")!.spendCents).toBe(
+      -matching.reduce((s, r) => s + r.amountCents, 0),
+    );
+  });
+
+  it("offers the categories already in use, sorted, without Uncategorized", () => {
+    expect(view().categories).toEqual([
+      "Insurance",
+      "Marketing",
+      "Meals",
+      "Office supplies",
+      "Rent",
+      "Software",
+      "Staff welfare",
+      "Travel",
+      "Utilities",
+    ]);
+  });
+
+  it.each([
+    ["Zeta Widgets Ltd", "Zeta Widgets"],
+    ["Cash withdrawal ATM", "Cash withdrawal"],
+    ["  Uber   trip  ", "Uber trip"],
+    ["Rent", "Rent"],
+    ["", ""],
+  ])("suggests %j for %j", (description, suggested) =>
+    expect(suggestMatchText(description)).toBe(suggested),
+  );
+});
+
 describe("helpers", () => {
   it.each([
     ["2026-01", "January 2026"],
@@ -157,7 +219,7 @@ describe("explain entries for the budget page (INV-07)", () => {
   };
 
   it("registers every budget ID, each with a complete entry", () => {
-    expect(BUDGET_EXPLAIN_IDS).toHaveLength(10);
+    expect(BUDGET_EXPLAIN_IDS).toHaveLength(12);
     for (const id of BUDGET_EXPLAIN_IDS) {
       expect(EXPLAIN_IDS).toContain(id);
       expect(EXPLAIN[id].formula.length).toBeGreaterThan(40);

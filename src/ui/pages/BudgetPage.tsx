@@ -12,6 +12,8 @@ import ExplainPanel from "../components/ExplainPanel";
 import FileDropzone from "../components/FileDropzone";
 import ImportReport from "../components/ImportReport";
 import MetricCard from "../components/MetricCard";
+import RulesEditor from "../components/RulesEditor";
+import UncategorizedQueue from "../components/UncategorizedQueue";
 
 export default function BudgetPage({
   state,
@@ -140,6 +142,18 @@ export default function BudgetPage({
               </button>
             </div>
           </Card>
+          <UncategorizedQueue view={view} dispatch={dispatch} onExplain={setExplainId} />
+          <RulesEditor
+            rules={state.rules}
+            errors={state.ruleErrors}
+            dispatch={dispatch}
+            onExplain={setExplainId}
+          />
+          <datalist id="category-options">
+            {view.categories.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </>
       )}
       {explainId && (

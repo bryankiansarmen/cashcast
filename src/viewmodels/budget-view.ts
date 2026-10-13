@@ -1,6 +1,15 @@
-import { monthsOf, varianceReport, type BudgetStatus } from "../budget";
+import {
+  categorize,
+  monthKey,
+  monthsOf,
+  UNCATEGORIZED,
+  varianceReport,
+  type BudgetStatus,
+} from "../budget";
 import type { Budget, CategoryRule, Transaction } from "../budget/types";
 import { dollarsInputText } from "./format";
+
+export { MAX_CATEGORY_LENGTH, validateRule } from "../budget";
 
 /** Kinds of figure the budget page displays; the explain registry must have an entry for each (INV-07). */
 export const BUDGET_EXPLAIN_IDS = [
@@ -14,6 +23,8 @@ export const BUDGET_EXPLAIN_IDS = [
   "budget.categoryVariance",
   "budget.categoryStatus",
   "budget.contributors",
+  "budget.uncategorized",
+  "budget.ruleOrder",
 ] as const;
 
 /** Text and an icon, so a status never rests on colour alone. */
@@ -57,12 +68,28 @@ export interface BudgetRow {
   topContributors: { id: string; date: string; description: string; amountCents: number }[];
 }
 
+export interface UncategorizedRow {
+  id: string;
+  date: string;
+  description: string;
+  amountCents: number;
+  /** Match text to offer when creating a rule from this transaction: its first two words. */
+  suggestedContains: string;
+}
+
+export const suggestMatchText = (description: string): string =>
+  description.trim().split(/\s+/).slice(0, 2).join(" ");
+
 export interface BudgetView {
   isEmpty: boolean;
   month: string;
   monthLabel: string;
   months: { value: string; label: string }[];
   rows: BudgetRow[];
+  /** The month's transactions with no CSV category and no matching rule, oldest first. */
+  uncategorized: UncategorizedRow[];
+  /** Category names already in use, for suggestions. */
+  categories: string[];
   totals: {
     spendCents: number;
     budgetCents: number; // sum of the targets you set
@@ -105,6 +132,25 @@ export function buildBudgetView(
     monthLabel: monthLabel(month),
     months: monthsOf(transactions).map((value) => ({ value, label: monthLabel(value) })),
     rows,
+    uncategorized: transactions
+      .filter((t) => monthKey(t.date) === month && categorize(t, rules) === UNCATEGORIZED)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((t) => ({
+        id: t.id,
+        date: t.date,
+        description: t.description,
+        amountCents: t.amountCents,
+        suggestedContains: suggestMatchText(t.description),
+      })),
+    categories: [
+      ...new Set([
+        ...Object.keys(budget.monthlyCents),
+        ...rules.map((r) => r.category),
+        ...transactions.flatMap((t) => (t.csvCategory?.trim() ? [t.csvCategory.trim()] : [])),
+      ]),
+    ]
+      .filter((c) => c !== UNCATEGORIZED)
+      .sort((a, b) => a.localeCompare(b)),
     totals: {
       spendCents,
       budgetCents,

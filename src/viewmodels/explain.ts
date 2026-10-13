@@ -205,6 +205,23 @@ export const EXPLAIN: Record<ExplainId, ExplainEntry> = {
     inputs: ["Outflow transactions in the category and month"],
     assumptions: [NONE],
   },
+  "budget.uncategorized": {
+    title: "Uncategorized transactions",
+    formula:
+      "A transaction is uncategorized when it has no CSV category and no rule matches its description. A transaction's category is its CSV category if not blank, else the first matching rule in list order (case-insensitive substring of the description), else Uncategorized. Amounts are the transaction amounts as imported; negative means money out.",
+    inputs: [
+      "The month's transactions",
+      "Each transaction's description, amount, and CSV category",
+    ],
+    assumptions: ["The categorization rules, in list order"],
+  },
+  "budget.ruleOrder": {
+    title: "Rule order",
+    formula:
+      "Rules are checked in list order. The first rule whose text is contained in the description (case-insensitive) decides the category, so moving a rule up gives it priority. A CSV category on a transaction beats every rule.",
+    inputs: ["The rule list and its order"],
+    assumptions: [NONE],
+  },
   "assumptions.curveTotal": {
     title: "Collection curve total",
     formula:

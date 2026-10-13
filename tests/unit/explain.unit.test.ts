@@ -32,7 +32,7 @@ describe("explain registry (INV-07)", () => {
     ]) {
       expect(EXPLAIN_IDS).toContain(id);
     }
-    expect(EXPLAIN_IDS).toHaveLength(24);
+    expect(EXPLAIN_IDS).toHaveLength(26);
     expect(new Set(EXPLAIN_IDS).size).toBe(EXPLAIN_IDS.length);
     expect(Object.keys(EXPLAIN).sort()).toEqual([...EXPLAIN_IDS].sort());
   });

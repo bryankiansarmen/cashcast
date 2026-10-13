@@ -190,10 +190,12 @@ test("every figure on the page has an explain button that opens a complete panel
     "budget.categoryStatus",
     "budget.categoryVariance",
     "budget.contributors",
+    "budget.ruleOrder",
     "budget.target",
     "budget.totalBudget",
     "budget.totalSpend",
     "budget.unbudgetedSpend",
+    "budget.uncategorized",
     "budget.variance",
   ];
   const triggers = page.locator("[data-explain-id]");
