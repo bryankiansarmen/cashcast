@@ -1,0 +1,8 @@
+Date,Description,Amount,Category
+2026-07-01,Maple Court rent,-2400.00,
+2026-02-30,Bad date,-10.00,
+2026-07-03,,-5.00,
+2026-07-04,Zero amount,0.00,
+2026-07-05,Bad amount,abc,
+,Missing date,-3.00,
+2026-07-06,Fine one,-12.00,Food
