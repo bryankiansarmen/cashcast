@@ -5,7 +5,7 @@ const fixture = (name: string) => fileURLToPath(new URL(`../fixtures/${name}`, i
 const KEY = "cashcast.assumptions.v1";
 
 const collected = (page: import("@playwright/test").Page) =>
-  page.getByText("Expected collections, 13 weeks").locator("xpath=following-sibling::div[1]");
+  page.locator(".metric", { hasText: "Expected collections, 13 weeks" }).locator(".metric-value");
 const cell = (page: import("@playwright/test").Page, label: string) =>
   page.getByLabel(label, { exact: true });
 const stored = (page: import("@playwright/test").Page) =>

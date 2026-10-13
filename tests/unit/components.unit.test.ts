@@ -66,6 +66,20 @@ describe("DataTable", () => {
     expect(order(desc)).toEqual(["Cyan", "Beta", "Acme"]);
   });
 
+  it("adds an explain button to headers that name an entry, labelled by column", () => {
+    const withExplain = [{ ...columns[1], explain: "aging.bucketTotal" as const }, columns[0]];
+    const html = table({ columns: withExplain, onExplain: () => {} });
+    expect(html).toContain('data-explain-id="aging.bucketTotal"');
+    expect(html).toContain('aria-label="How Amount is calculated"');
+    expect(html.match(/th-explain/g)).toHaveLength(1);
+  });
+
+  it("shows no explain buttons when no handler is given", () => {
+    expect(
+      table({ columns: [{ ...columns[1], explain: "aging.bucketTotal" as const }] }),
+    ).not.toContain("th-explain");
+  });
+
   it("right-aligns numeric columns", () => {
     expect(table()).toContain('class="num"');
   });
@@ -86,6 +100,12 @@ describe("MetricCard", () => {
     expect(html).toContain("60 invoices");
     expect(html).toContain('aria-expanded="false"');
     expect(html).toContain("Explain<span");
+  });
+
+  it("exposes the explain id on its button", () => {
+    expect(
+      render(h(MetricCard, { ...base, explainId: "aging.totalOpen", onExplain: () => {} })),
+    ).toContain('data-explain-id="aging.totalOpen"');
   });
 
   it("explain-open: the button reports expanded", () => {

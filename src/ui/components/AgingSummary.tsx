@@ -5,6 +5,7 @@ import {
   type AgingCustomerRow,
   type AgingView,
 } from "../../viewmodels/aging-view";
+import type { ExplainId } from "../../viewmodels/explain";
 import { formatCurrency, formatPercent, ROUNDING_FOOTNOTE } from "../../viewmodels/format";
 import Card from "./Card";
 import DataTable, { type Column } from "./DataTable";
@@ -19,6 +20,7 @@ const bucketColumns: Column<AgingBucketRow>[] = [
     cell: (r) => r.count,
     sortValue: (r) => r.count,
     numeric: true,
+    explain: "aging.bucketCount",
   },
   {
     key: "total",
@@ -26,6 +28,7 @@ const bucketColumns: Column<AgingBucketRow>[] = [
     cell: (r) => formatCurrency(r.totalCents),
     sortValue: (r) => r.totalCents,
     numeric: true,
+    explain: "aging.bucketTotal",
   },
   {
     key: "share",
@@ -33,6 +36,7 @@ const bucketColumns: Column<AgingBucketRow>[] = [
     cell: (r) => formatPercent(r.share, 1),
     sortValue: (r) => r.share,
     numeric: true,
+    explain: "aging.bucketShare",
   },
 ];
 
@@ -44,6 +48,7 @@ const customerColumns: Column<AgingCustomerRow>[] = [
     cell: (r: AgingCustomerRow) => formatCurrency(r.byBucketCents[id]),
     sortValue: (r: AgingCustomerRow) => r.byBucketCents[id],
     numeric: true,
+    explain: "aging.customerBucket" as const,
   })),
   {
     key: "total",
@@ -51,15 +56,20 @@ const customerColumns: Column<AgingCustomerRow>[] = [
     cell: (r) => formatCurrency(r.totalCents),
     sortValue: (r) => r.totalCents,
     numeric: true,
+    explain: "aging.customerTotal",
   },
 ];
 
 export default function AgingSummary({
   view,
   onLoadSample,
+  onExplain,
+  openId,
 }: {
   view: AgingView;
   onLoadSample: () => void;
+  onExplain: (id: ExplainId) => void;
+  openId: ExplainId | null;
 }) {
   if (view.isEmpty) {
     return (
@@ -77,11 +87,17 @@ export default function AgingSummary({
           label="Total open AR"
           value={formatCurrency(view.totalOpenCents)}
           context={`${view.invoiceCount} invoices across ${view.customerCount} customers`}
+          explainId="aging.totalOpen"
+          explainOpen={openId === "aging.totalOpen"}
+          onExplain={() => onExplain("aging.totalOpen")}
         />
         <MetricCard
           label="Past due AR"
           value={formatCurrency(view.pastDueCents)}
           context={`${formatPercent(view.pastDueShare, 1)} of open AR`}
+          explainId="aging.pastDue"
+          explainOpen={openId === "aging.pastDue"}
+          onExplain={() => onExplain("aging.pastDue")}
         />
       </div>
       <Card title={`Aging by bucket, as of ${view.asOf}`}>
@@ -90,6 +106,7 @@ export default function AgingSummary({
           columns={bucketColumns}
           rows={view.buckets}
           rowKey={(r) => r.id}
+          onExplain={onExplain}
         />
       </Card>
       <Card title="Aging by customer">
@@ -99,6 +116,7 @@ export default function AgingSummary({
           rows={view.customers}
           rowKey={(r) => r.key}
           initialSort={{ key: "total", dir: "desc" }}
+          onExplain={onExplain}
         />
         <p className="hint">{ROUNDING_FOOTNOTE}</p>
       </Card>

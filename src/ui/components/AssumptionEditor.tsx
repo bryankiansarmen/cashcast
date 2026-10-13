@@ -1,6 +1,7 @@
 import { useState, type Dispatch } from "react";
 import type { Action, State } from "../../state/store";
 import { buildAssumptionsView } from "../../viewmodels/assumptions-view";
+import type { ExplainId } from "../../viewmodels/explain";
 import Card from "./Card";
 
 /**
@@ -10,9 +11,11 @@ import Card from "./Card";
 export default function AssumptionEditor({
   state,
   dispatch,
+  onExplain,
 }: {
   state: State;
   dispatch: Dispatch<Action>;
+  onExplain: (id: ExplainId) => void;
 }) {
   const view = buildAssumptionsView(state.assumptions, state.invoices, state.history);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -68,6 +71,15 @@ export default function AssumptionEditor({
                 ))}
                 <th scope="col" className="num">
                   Total
+                  <button
+                    type="button"
+                    className="th-explain"
+                    data-explain-id="assumptions.curveTotal"
+                    aria-label="How the curve total is calculated"
+                    onClick={() => onExplain("assumptions.curveTotal")}
+                  >
+                    ?
+                  </button>
                 </th>
               </tr>
             </thead>

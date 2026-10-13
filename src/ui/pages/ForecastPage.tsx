@@ -2,12 +2,14 @@ import { useMemo, useState, type Dispatch } from "react";
 import type { Action, State } from "../../state/store";
 import { MAX_UPLOAD_BYTES, oversizeMessage } from "../../state/store";
 import { buildAgingView } from "../../viewmodels/aging-view";
+import { explainView, type ExplainId } from "../../viewmodels/explain";
 import { buildForecastView } from "../../viewmodels/forecast-view";
 import AgingSummary from "../components/AgingSummary";
 import Banner from "../components/Banner";
 import AsOfControl from "../components/AsOfControl";
 import AssumptionEditor from "../components/AssumptionEditor";
 import Card from "../components/Card";
+import ExplainPanel from "../components/ExplainPanel";
 import FileDropzone from "../components/FileDropzone";
 import ForecastSection from "../components/ForecastSection";
 import ImportReport from "../components/ImportReport";
@@ -24,6 +26,7 @@ export default function ForecastPage({
 }) {
   const { report } = state;
   const [storageNoticeOpen, setStorageNoticeOpen] = useState(true);
+  const [explainId, setExplainId] = useState<ExplainId | null>(null);
   const forecast = useMemo(
     () =>
       buildForecastView(
@@ -102,10 +105,28 @@ export default function ForecastPage({
         <ForecastSection
           view={forecast}
           onSelectScenario={(scenario) => dispatch({ type: "selectScenario", scenario })}
+          onExplain={setExplainId}
+          openId={explainId}
         />
       )}
-      <AssumptionEditor state={state} dispatch={dispatch} />
-      <AgingSummary view={aging} onLoadSample={() => dispatch({ type: "loadSample" })} />
+      <AssumptionEditor state={state} dispatch={dispatch} onExplain={setExplainId} />
+      <AgingSummary
+        view={aging}
+        onLoadSample={() => dispatch({ type: "loadSample" })}
+        onExplain={setExplainId}
+        openId={explainId}
+      />
+      {explainId && (
+        <ExplainPanel
+          view={explainView(explainId, {
+            assumptions: state.assumptions,
+            asOf: state.asOf,
+            scenario: state.scenario,
+            usingDefaults: forecast.usingDefaults,
+          })}
+          onClose={() => setExplainId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -7,6 +7,8 @@ interface Props {
   /** Opens the explain panel; the button is omitted when absent. */
   onExplain?: () => void;
   explainOpen?: boolean;
+  /** Identifies the figure's explain entry. */
+  explainId?: string;
 }
 
 export default function MetricCard({
@@ -17,6 +19,7 @@ export default function MetricCard({
   error,
   onExplain,
   explainOpen = false,
+  explainId,
 }: Props) {
   return (
     <div className="card metric">
@@ -37,6 +40,7 @@ export default function MetricCard({
         <button
           type="button"
           className="btn btn-link"
+          data-explain-id={explainId}
           aria-expanded={explainOpen}
           onClick={onExplain}
         >

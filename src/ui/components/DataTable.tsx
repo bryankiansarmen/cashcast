@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import type { ExplainId } from "../../viewmodels/explain";
 import { sortRows, type SortDir } from "../../viewmodels/table";
 
 export interface Column<T> {
@@ -8,6 +9,8 @@ export interface Column<T> {
   /** Makes the column sortable through a header button. */
   sortValue?: (row: T) => string | number;
   numeric?: boolean;
+  /** Adds a "how is this calculated" button to the header. */
+  explain?: ExplainId;
 }
 
 interface Props<T> {
@@ -17,6 +20,7 @@ interface Props<T> {
   rowKey: (row: T) => string;
   empty?: ReactNode;
   initialSort?: { key: string; dir: SortDir };
+  onExplain?: (id: ExplainId) => void;
 }
 
 export default function DataTable<T>({
@@ -26,6 +30,7 @@ export default function DataTable<T>({
   rowKey,
   empty,
   initialSort,
+  onExplain,
 }: Props<T>) {
   const [sort, setSort] = useState(initialSort);
   const sortCol = columns.find((c) => c.key === sort?.key);
@@ -62,6 +67,17 @@ export default function DataTable<T>({
                   </button>
                 ) : (
                   c.header
+                )}
+                {c.explain && onExplain && (
+                  <button
+                    type="button"
+                    className="th-explain"
+                    data-explain-id={c.explain}
+                    aria-label={`How ${c.header} is calculated`}
+                    onClick={() => onExplain(c.explain!)}
+                  >
+                    ?
+                  </button>
                 )}
               </th>
             ))}

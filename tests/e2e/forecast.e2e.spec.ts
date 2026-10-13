@@ -7,9 +7,11 @@ test("the forecast shows metrics, an illustrative label, the footnote, a labelle
   page,
 }) => {
   await page.goto("/");
-  await expect(page.getByText("Expected collections, 13 weeks")).toBeVisible();
-  await expect(page.getByText("Uncollected in horizon")).toBeVisible();
-  await expect(page.getByText("Next 4 weeks", { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".metric-label", { hasText: "Expected collections, 13 weeks" }),
+  ).toBeVisible();
+  await expect(page.locator(".metric-label", { hasText: "Uncollected in horizon" })).toBeVisible();
+  await expect(page.locator(".metric-label", { hasText: "Next 4 weeks" })).toBeVisible();
   await expect(
     page.getByText("Illustrative default assumptions, not industry benchmarks"),
   ).toBeVisible();
@@ -42,8 +44,8 @@ test("the scenario toggle works with the arrow keys and changes the weekly colum
 }) => {
   await page.goto("/");
   const metric = page
-    .getByText("Expected collections, 13 weeks")
-    .locator("xpath=following-sibling::div[1]");
+    .locator(".metric", { hasText: "Expected collections, 13 weeks" })
+    .locator(".metric-value");
   const before = await metric.textContent();
   const table = page.getByRole("region", { name: "Weekly forecast" });
   await expect(table.getByRole("columnheader", { name: /Collections \(expected\)/ })).toBeVisible();
@@ -64,8 +66,8 @@ test("the scenario toggle works with the arrow keys and changes the weekly colum
 test("importing payment history changes the forecast", async ({ page }) => {
   await page.goto("/");
   const metric = page
-    .getByText("Expected collections, 13 weeks")
-    .locator("xpath=following-sibling::div[1]");
+    .locator(".metric", { hasText: "Expected collections, 13 weeks" })
+    .locator(".metric-value");
   const before = await metric.textContent();
   await page
     .getByTestId("file-Payment history CSV (optional)")
