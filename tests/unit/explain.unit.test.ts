@@ -5,6 +5,7 @@ import type { Assumptions } from "../../src/engine/types";
 import { AGING_EXPLAIN_IDS } from "../../src/viewmodels/aging-view";
 import { EXPLAIN, EXPLAIN_IDS, explainView, type ExplainId } from "../../src/viewmodels/explain";
 import { FORECAST_EXPLAIN_IDS } from "../../src/viewmodels/forecast-view";
+import { RECONCILIATION_EXPLAIN_IDS } from "../../src/viewmodels/reconciliation-view";
 
 const defaults: Assumptions = {
   version: 1,
@@ -20,11 +21,16 @@ const ctx = {
 };
 
 describe("explain registry (INV-07)", () => {
-  it("covers every kind of number the aging and forecast views display, plus curve totals", () => {
-    for (const id of [...AGING_EXPLAIN_IDS, ...FORECAST_EXPLAIN_IDS, "assumptions.curveTotal"]) {
+  it("covers every kind of number the aging and forecast views display, plus reconciliation and curve totals", () => {
+    for (const id of [
+      ...AGING_EXPLAIN_IDS,
+      ...FORECAST_EXPLAIN_IDS,
+      ...RECONCILIATION_EXPLAIN_IDS,
+      "assumptions.curveTotal",
+    ]) {
       expect(EXPLAIN_IDS).toContain(id);
     }
-    expect(EXPLAIN_IDS).toHaveLength(13);
+    expect(EXPLAIN_IDS).toHaveLength(14);
     expect(new Set(EXPLAIN_IDS).size).toBe(EXPLAIN_IDS.length);
     expect(Object.keys(EXPLAIN).sort()).toEqual([...EXPLAIN_IDS].sort());
   });

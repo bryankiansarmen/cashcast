@@ -7,6 +7,8 @@ import Card from "../../src/ui/components/Card";
 import DataTable, { type Column } from "../../src/ui/components/DataTable";
 import EmptyState from "../../src/ui/components/EmptyState";
 import MetricCard from "../../src/ui/components/MetricCard";
+import ReconciliationStatus from "../../src/ui/components/ReconciliationStatus";
+import { describeReconciliation } from "../../src/viewmodels/reconciliation-view";
 
 interface Row {
   name: string;
@@ -164,6 +166,42 @@ describe("Banner, Card, EmptyState", () => {
     );
     expect(html).toContain("No data");
     expect(html).toContain("Load sample data");
+  });
+});
+
+describe("ReconciliationStatus", () => {
+  const props = { onExplain: () => {}, openId: null };
+
+  it("healthy: a Reconciled indicator with an explain button, and no alert", () => {
+    const html = render(h(ReconciliationStatus, { view: describeReconciliation([]), ...props }));
+    expect(html).toContain("Reconciled");
+    expect(html).toContain('data-explain-id="reconciliation.status"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('role="alert"');
+  });
+
+  it("reports the open explain panel", () => {
+    const html = render(
+      h(ReconciliationStatus, {
+        view: describeReconciliation([]),
+        onExplain: () => {},
+        openId: "reconciliation.status",
+      }),
+    );
+    expect(html).toContain('aria-expanded="true"');
+  });
+
+  it("failed: an error alert naming the checks and their messages, with no Reconciled indicator", () => {
+    const view = describeReconciliation([
+      { id: "R3", message: "Invoice inv-2 has bad probabilities." },
+      { id: "R1", message: "expected: totals differ." },
+    ]);
+    const html = render(h(ReconciliationStatus, { view, ...props }));
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("failed reconciliation (R1, R3), so it is hidden.");
+    expect(html).toContain("Invoice inv-2 has bad probabilities.");
+    expect(html).not.toContain("✓");
+    expect(html).not.toContain("<button");
   });
 });
 

@@ -5,6 +5,7 @@ import type { CheckFailure } from "../engine/reconcile";
 import { DEFAULT_SCENARIOS } from "../engine/scenarios";
 import type { Assumptions, Invoice, IsoDate, PaidInvoice, ScenarioId } from "../engine/types";
 import { formatCurrency } from "./format";
+import { describeReconciliation, type ReconciliationView } from "./reconciliation-view";
 
 export type { ScenarioId };
 
@@ -42,6 +43,8 @@ export interface ForecastView {
   scenario: ScenarioId;
   /** Failed reconciliation checks. When non-empty nothing may be displayed (INV-04). */
   blocked: CheckFailure[];
+  /** The same outcome as an indicator state, for display. */
+  reconciliation: ReconciliationView;
   /** True while curves and scenario parameters are the built-in illustrative defaults (INV-13). */
   usingDefaults: boolean;
   rows: ForecastRow[];
@@ -71,6 +74,7 @@ export function buildForecastView(
     asOf,
     scenario,
     blocked: failures,
+    reconciliation: describeReconciliation(failures),
     usingDefaults:
       sameJson(assumptions.curves, DEFAULT_CURVES) &&
       sameJson(assumptions.scenarios, DEFAULT_SCENARIOS),

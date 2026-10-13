@@ -15,6 +15,7 @@ const EXPECTED_IDS = [
   "forecast.uncollected",
   "forecast.weekCumulative",
   "forecast.weekInflow",
+  "reconciliation.status",
 ];
 
 test("every kind of number has an explain button, and each opens a complete panel that Escape closes", async ({

@@ -10,6 +10,7 @@ import Card from "./Card";
 import ForecastChart from "./ForecastChart";
 import ForecastTable from "./ForecastTable";
 import MetricCard from "./MetricCard";
+import ReconciliationStatus from "./ReconciliationStatus";
 import ScenarioToggle from "./ScenarioToggle";
 
 /** Shows the forecast, or only an error naming the failed checks when reconciliation fails (INV-04). */
@@ -24,17 +25,14 @@ export default function ForecastSection({
   onExplain: (id: ExplainId) => void;
   openId: ExplainId | null;
 }) {
-  if (view.blocked.length > 0) {
-    return (
-      <Banner kind="error">
-        The forecast failed reconciliation ({view.blocked.map((f) => f.id).join(", ")}), so it is
-        hidden. {view.blocked.map((f) => f.message).join(" ")}
-      </Banner>
-    );
-  }
+  const status = (
+    <ReconciliationStatus view={view.reconciliation} onExplain={onExplain} openId={openId} />
+  );
+  if (view.reconciliation.status === "blocked") return status; // nothing else is shown (INV-04)
   const { metrics } = view;
   return (
     <div className="page">
+      {status}
       <div className="metric-grid">
         <MetricCard
           label="Expected collections, 13 weeks"

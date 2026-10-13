@@ -75,3 +75,23 @@ test("importing payment history changes the forecast", async ({ page }) => {
   await expect(page.getByText("Imported 59 paid invoices")).toBeVisible();
   await expect.poll(async () => metric.textContent()).not.toBe(before);
 });
+
+test("a reconciled forecast shows the Reconciled indicator with an explain entry", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const status = page.getByRole("status").filter({ hasText: "Reconciled" });
+  await expect(status).toContainText("✓ Reconciled");
+  await status.getByRole("button", { name: /Explain/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Reconciliation status" });
+  await expect(dialog).toContainText("R1:");
+  await expect(dialog).toContainText("R5:");
+  await expect(dialog).toContainText("the forecast is hidden");
+  await expect(dialog).toContainText("Checks run");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("alert").filter({ hasText: "failed reconciliation" })).toHaveCount(0);
+  // It stays reconciled across edits and scenario changes.
+  await page.getByLabel("Current curve, week 1 (%)", { exact: true }).fill("30");
+  await page.locator("label.segment", { hasText: "Best" }).click();
+  await expect(status).toContainText("Reconciled");
+});

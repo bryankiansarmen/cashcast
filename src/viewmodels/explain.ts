@@ -2,11 +2,13 @@ import type { Assumptions, IsoDate, ScenarioId } from "../engine/types";
 import { AGING_EXPLAIN_IDS, BUCKET_LABELS, BUCKET_ORDER } from "./aging-view";
 import { formatPercent } from "./format";
 import { FORECAST_EXPLAIN_IDS, SCENARIO_IDS, SCENARIO_LABELS } from "./forecast-view";
+import { RECONCILIATION_EXPLAIN_IDS } from "./reconciliation-view";
 
 /** Every kind of number the app displays has an entry here (INV-07). */
 export const EXPLAIN_IDS = [
   ...AGING_EXPLAIN_IDS,
   ...FORECAST_EXPLAIN_IDS,
+  ...RECONCILIATION_EXPLAIN_IDS,
   "assumptions.curveTotal",
 ] as const;
 export type ExplainId = (typeof EXPLAIN_IDS)[number];
@@ -117,6 +119,19 @@ export const EXPLAIN: Record<ExplainId, ExplainEntry> = {
     inputs: FORECAST_INPUTS,
     assumptions: FORECAST_ASSUMPTIONS,
   },
+  "reconciliation.status": {
+    title: "Reconciliation status",
+    formula:
+      "Every forecast passes these checks before it is shown. R1: the sum of weekly inflows plus total uncollected equals total open AR, per scenario. " +
+      "R2: bucket totals sum to total open AR. R3: every invoice's probabilities are at least 0 and sum to at most 1. " +
+      "R4: cumulative worst is at most expected, which is at most best, in every week. " +
+      "R5: no weekly inflow is negative, and cumulative inflow never decreases. If any check fails, the forecast is hidden.",
+    inputs: [
+      "The weekly forecast for the best, expected, and worst scenarios",
+      "Every invoice and the aging buckets",
+    ],
+    assumptions: ["The same assumptions the forecast uses; the checks add none of their own"],
+  },
   "assumptions.curveTotal": {
     title: "Collection curve total",
     formula:
@@ -184,6 +199,8 @@ export function explainView(id: ExplainId, ctx: ExplainContext): ExplainView {
           : "Edited by you",
       },
     );
+  } else if (id === "reconciliation.status") {
+    values.push({ label: "Checks run", value: "R1, R2, R3, R4, R5" });
   } else if (id === "assumptions.curveTotal") {
     values.splice(0, 1, curves);
   }
