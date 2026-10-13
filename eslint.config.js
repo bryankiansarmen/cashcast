@@ -11,6 +11,7 @@ export default tseslint.config(
     ignores: [
       "dist",
       "dist-pages",
+      "dist-shots",
       "coverage",
       "node_modules",
       "playwright-report",

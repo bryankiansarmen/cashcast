@@ -16,7 +16,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:integration && npm run test:e2e",
-    "test:pages": "playwright test --config playwright.pages.config.ts"
+    "test:pages": "playwright test --config playwright.pages.config.ts",
+    "shots": "playwright test --config playwright.shots.config.ts"
   },
   "dependencies": {
     "papaparse": "^5.7.0",
