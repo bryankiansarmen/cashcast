@@ -44,13 +44,16 @@ test("theme follows the system and the toggle persists across reloads", async ({
   await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
 });
 
-test("a dark system preference is followed when nothing is saved", async ({ browser }) => {
-  const page = await (await browser.newContext({ colorScheme: "dark" })).newPage();
-  await page.goto("http://localhost:4173/");
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
-    "rgb(15, 20, 25)",
-  );
-  await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
+test.describe("with a dark system theme", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("a dark system preference is followed when nothing is saved", async ({ page }) => {
+    await page.goto("/");
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(
+      "rgb(15, 20, 25)",
+    );
+    await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
+  });
 });
 
 test("the privacy notice is shown, states what is stored, and can be dismissed", async ({
