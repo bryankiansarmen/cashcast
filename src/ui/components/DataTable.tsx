@@ -21,6 +21,8 @@ interface Props<T> {
   empty?: ReactNode;
   initialSort?: { key: string; dir: SortDir };
   onExplain?: (id: ExplainId) => void;
+  /** Show every row without a vertical scroll box (still scrolls sideways when too wide). */
+  full?: boolean;
 }
 
 export default function DataTable<T>({
@@ -31,6 +33,7 @@ export default function DataTable<T>({
   empty,
   initialSort,
   onExplain,
+  full,
 }: Props<T>) {
   const [sort, setSort] = useState(initialSort);
   const sortCol = columns.find((c) => c.key === sort?.key);
@@ -40,7 +43,12 @@ export default function DataTable<T>({
     setSort((s) => ({ key, dir: s?.key === key && s.dir === "asc" ? "desc" : "asc" }));
 
   return (
-    <div className="table-scroll" role="region" aria-label={caption} tabIndex={0}>
+    <div
+      className={`table-scroll${full ? " table-full" : ""}`}
+      role="region"
+      aria-label={caption}
+      tabIndex={0}
+    >
       <table className="table">
         <caption className="sr-only">{caption}</caption>
         <thead>

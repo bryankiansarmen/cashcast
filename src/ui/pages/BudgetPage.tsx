@@ -92,7 +92,7 @@ export default function BudgetPage({
               ))}
             </select>
           </div>
-          <div className="metric-grid">
+          <div className="metric-grid metric-grid-5">
             {metric(
               "budget.totalSpend",
               "Total spend",

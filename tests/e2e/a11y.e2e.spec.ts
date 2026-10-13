@@ -228,3 +228,126 @@ test.describe("reduced motion", () => {
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   });
 });
+
+// Responsive pass: three widths, both themes, both pages.
+for (const width of [360, 768, 1280]) {
+  for (const scheme of ["light", "dark"] as const) {
+    test.describe(`layout at ${width}px, ${scheme} theme`, () => {
+      test.use({ colorScheme: scheme, viewport: { width, height: 800 } });
+
+      for (const [name, route] of [
+        ["Forecast", "/"],
+        ["Budget", "/#/budget"],
+      ] as const) {
+        test(`${name} page fits the screen, scrolls wide tables inside their own containers, and has 44 px targets`, async ({
+          page,
+        }) => {
+          await page.goto(route);
+          await expect(page.locator(".metric-value").first()).toBeVisible();
+
+          const layout = await page.evaluate(() => {
+            const root = document.documentElement;
+            const containers = [...document.querySelectorAll<HTMLElement>(".table-scroll, .chart")];
+            return {
+              pageOverflow: root.scrollWidth - root.clientWidth,
+              leaking: containers
+                .filter((el) => el.getBoundingClientRect().right > window.innerWidth + 1)
+                .map((el) => el.className),
+              unscrollable: containers
+                .filter(
+                  (el) =>
+                    el.scrollWidth > el.clientWidth + 1 &&
+                    !["auto", "scroll"].includes(getComputedStyle(el).overflowX),
+                )
+                .map((el) => el.className),
+              scrolling: containers.filter((el) => el.scrollWidth > el.clientWidth + 1).length,
+            };
+          });
+          expect(layout.pageOverflow, "the page itself scrolls sideways").toBeLessThanOrEqual(0);
+          expect(layout.leaking, "containers wider than the screen").toEqual([]);
+          expect(layout.unscrollable, "overflowing content with no scrolling container").toEqual(
+            [],
+          );
+          if (width === 360)
+            expect(layout.scrolling, "wide tables scroll inside their containers").toBeGreaterThan(
+              0,
+            );
+
+          const small = await page.evaluate(() => {
+            const selector =
+              'button, a[href], select, summary, label.segment, input:not([type="hidden"]):not([type="file"]):not([type="radio"])';
+            return [...document.querySelectorAll<HTMLElement>(selector)]
+              .filter((el) => {
+                const r = el.getBoundingClientRect();
+                const s = getComputedStyle(el);
+                return (
+                  s.visibility !== "hidden" &&
+                  s.display !== "none" &&
+                  r.width > 0 &&
+                  r.height > 0 &&
+                  !el.closest("[hidden]")
+                );
+              })
+              .map((el) => {
+                const r = el.getBoundingClientRect();
+                const label =
+                  el.getAttribute("aria-label") ?? el.textContent?.trim().slice(0, 24) ?? "";
+                return {
+                  target: `${el.tagName.toLowerCase()} ${label}`,
+                  w: Math.round(r.width),
+                  h: Math.round(r.height),
+                };
+              })
+              .filter((t) => Math.min(t.w, t.h) < 44);
+          });
+          expect(small, "touch targets under 44 by 44 px").toEqual([]);
+
+          await expectNoSeriousViolations(page, `${name} at ${width}px, ${scheme}`);
+        });
+      }
+    });
+  }
+}
+
+for (const width of [360, 768, 1280]) {
+  test.describe(`chart key, week table, and cards at ${width}px`, () => {
+    test.use({ viewport: { width, height: 800 } });
+
+    test("the chart key sits below the plot, and the week table shows all 13 weeks without a scroll box", async ({
+      page,
+    }) => {
+      await page.goto("/");
+      const chart = page.locator(".chart");
+      const legend = page.locator(".chart-legend");
+      await expect(legend.getByRole("listitem")).toHaveText([
+        "Weekly collections (expected)",
+        "Cumulative expected",
+        "Cumulative best",
+        "Cumulative worst",
+      ]);
+      const [c, l] = await Promise.all([chart.boundingBox(), legend.boundingBox()]);
+      expect(l!.y, "the key starts below the chart").toBeGreaterThanOrEqual(c!.y + c!.height - 1);
+
+      const table = page.getByRole("region", { name: "Weekly forecast" });
+      const box = await table.evaluate((el) => ({
+        scroll: el.scrollHeight,
+        client: el.clientHeight,
+      }));
+      expect(box.scroll, "the week table has its own vertical scrolling").toBeLessThanOrEqual(
+        box.client + 1,
+      );
+      await expect(table.getByRole("row").last()).toContainText("W13");
+    });
+
+    test("the Budget summary cards share one row on a wide screen", async ({ page }) => {
+      await page.goto("/#/budget");
+      const tops = await page
+        .locator(".metric")
+        .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+      expect(tops).toHaveLength(5);
+      if (width >= 1024) expect(new Set(tops).size, "five cards in one row").toBe(1);
+      else
+        expect(new Set(tops).size, "cards stack or wrap on a narrower screen").toBeGreaterThan(1);
+    });
+  });
+}

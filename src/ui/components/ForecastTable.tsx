@@ -40,6 +40,7 @@ export default function ForecastTable({
       rows={tableRows(view)}
       rowKey={(r) => r.week}
       onExplain={onExplain}
+      full
     />
   );
 }
