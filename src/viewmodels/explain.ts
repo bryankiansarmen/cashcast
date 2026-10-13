@@ -1,5 +1,6 @@
 import type { Assumptions, IsoDate, ScenarioId } from "../engine/types";
 import { AGING_EXPLAIN_IDS, BUCKET_LABELS, BUCKET_ORDER } from "./aging-view";
+import { BUDGET_EXPLAIN_IDS, monthLabel } from "./budget-view";
 import { formatPercent } from "./format";
 import { FORECAST_EXPLAIN_IDS, SCENARIO_IDS, SCENARIO_LABELS } from "./forecast-view";
 import { RECONCILIATION_EXPLAIN_IDS } from "./reconciliation-view";
@@ -9,6 +10,7 @@ export const EXPLAIN_IDS = [
   ...AGING_EXPLAIN_IDS,
   ...FORECAST_EXPLAIN_IDS,
   ...RECONCILIATION_EXPLAIN_IDS,
+  ...BUDGET_EXPLAIN_IDS,
   "assumptions.curveTotal",
 ] as const;
 export type ExplainId = (typeof EXPLAIN_IDS)[number];
@@ -132,6 +134,77 @@ export const EXPLAIN: Record<ExplainId, ExplainEntry> = {
     ],
     assumptions: ["The same assumptions the forecast uses; the checks add none of their own"],
   },
+  "budget.totalSpend": {
+    title: "Total spend",
+    formula:
+      "The sum of spendCents over every category for the month. spendCents(category, month) is the negative of the sum of the transaction amounts for that category and month, so refunds reduce spend.",
+    inputs: ["The amount, date, description, and category of every transaction"],
+    assumptions: ["The categorization rules (listed by count below)"],
+  },
+  "budget.totalBudget": {
+    title: "Total budget",
+    formula:
+      "The sum of the monthly targets you entered. budgetCents is the monthly target per category, and 0 if unset.",
+    inputs: ["The monthly target you entered for each category"],
+    assumptions: [NONE],
+  },
+  "budget.variance": {
+    title: "Spend versus budget",
+    formula:
+      "variance = spendCents − budgetCents; positive means over budget. This card is total spend minus total budget, including spending in categories with no target.",
+    inputs: ["Total spend", "Total budget"],
+    assumptions: [NONE],
+  },
+  "budget.categoriesOver": {
+    title: "Categories over budget",
+    formula:
+      "The number of categories whose status is over: the target is above 0 and spend exceeds budget.",
+    inputs: ["Spend and monthly target for each category"],
+    assumptions: ["The status thresholds: near is spend of at least 90% of budget"],
+  },
+  "budget.unbudgetedSpend": {
+    title: "Unbudgeted spend",
+    formula:
+      "The spend in categories whose status is unbudgeted: budget is 0 and spend is above 0.",
+    inputs: ["Spend and monthly target for each category"],
+    assumptions: [NONE],
+  },
+  "budget.target": {
+    title: "Monthly target",
+    formula:
+      "The amount you entered for the category, in dollars, stored as whole cents. A blank target means budgetCents is 0.",
+    inputs: ["The amount you typed"],
+    assumptions: [NONE],
+  },
+  "budget.categorySpend": {
+    title: "Category spend",
+    formula:
+      "spendCents(category, month) is the negative of the sum of the transaction amounts for that category and month (refunds reduce spend). " +
+      "A transaction's category is its CSV category if not blank, else the first matching rule in list order (case-insensitive substring of the description), else Uncategorized.",
+    inputs: ["Transaction amounts, dates, descriptions, and CSV categories"],
+    assumptions: ["The categorization rules, in list order"],
+  },
+  "budget.categoryVariance": {
+    title: "Category variance",
+    formula:
+      "variance = spendCents − budgetCents; positive means over budget. variancePct = variance / budgetCents when budgetCents is above 0; otherwise not applicable.",
+    inputs: ["Category spend", "Monthly target"],
+    assumptions: [NONE],
+  },
+  "budget.categoryStatus": {
+    title: "Budget status",
+    formula:
+      "unbudgeted if budget is 0 and spend is above 0; over if spend exceeds budget; near if spend is at least 90% of budget; otherwise on_track.",
+    inputs: ["Category spend", "Monthly target"],
+    assumptions: ["The 90% threshold for near"],
+  },
+  "budget.contributors": {
+    title: "Top contributors",
+    formula:
+      "The 3 largest outflow transactions by absolute amount in the category and month; ties broken by earlier date, then input order.",
+    inputs: ["Outflow transactions in the category and month"],
+    assumptions: [NONE],
+  },
   "assumptions.curveTotal": {
     title: "Collection curve total",
     formula:
@@ -147,6 +220,9 @@ export interface ExplainContext {
   asOf: IsoDate;
   scenario: ScenarioId;
   usingDefaults: boolean;
+  /** Budget page only: the month shown (YYYY-MM) and how many categorization rules apply. */
+  month?: string;
+  ruleCount?: number;
 }
 export interface ExplainView extends ExplainEntry {
   /** The current values behind the figure, so the explanation matches what is on screen. */
@@ -199,6 +275,9 @@ export function explainView(id: ExplainId, ctx: ExplainContext): ExplainView {
           : "Edited by you",
       },
     );
+  } else if (id.startsWith("budget.")) {
+    values.splice(0, 1, { label: "Month", value: ctx.month ? monthLabel(ctx.month) : "" });
+    values.push({ label: "Categorization rules", value: String(ctx.ruleCount ?? 0) });
   } else if (id === "reconciliation.status") {
     values.push({ label: "Checks run", value: "R1, R2, R3, R4, R5" });
   } else if (id === "assumptions.curveTotal") {

@@ -32,7 +32,9 @@ function IssueTable({ issues, caption }: { issues: ImportIssue[]; caption: strin
 
 /** Result of the latest import. Imported text is only ever rendered as text nodes. */
 export default function ImportReport({ report }: { report: ImportReportData }) {
-  const what = report.kind === "ar" ? "invoices" : "paid invoices";
+  const what = { ar: "invoices", history: "paid invoices", transactions: "transactions" }[
+    report.kind
+  ];
   if (!report.ok) {
     return (
       <div className="stack">

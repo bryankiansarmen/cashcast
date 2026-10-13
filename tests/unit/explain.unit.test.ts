@@ -5,6 +5,7 @@ import type { Assumptions } from "../../src/engine/types";
 import { AGING_EXPLAIN_IDS } from "../../src/viewmodels/aging-view";
 import { EXPLAIN, EXPLAIN_IDS, explainView, type ExplainId } from "../../src/viewmodels/explain";
 import { FORECAST_EXPLAIN_IDS } from "../../src/viewmodels/forecast-view";
+import { BUDGET_EXPLAIN_IDS } from "../../src/viewmodels/budget-view";
 import { RECONCILIATION_EXPLAIN_IDS } from "../../src/viewmodels/reconciliation-view";
 
 const defaults: Assumptions = {
@@ -26,11 +27,12 @@ describe("explain registry (INV-07)", () => {
       ...AGING_EXPLAIN_IDS,
       ...FORECAST_EXPLAIN_IDS,
       ...RECONCILIATION_EXPLAIN_IDS,
+      ...BUDGET_EXPLAIN_IDS,
       "assumptions.curveTotal",
     ]) {
       expect(EXPLAIN_IDS).toContain(id);
     }
-    expect(EXPLAIN_IDS).toHaveLength(14);
+    expect(EXPLAIN_IDS).toHaveLength(24);
     expect(new Set(EXPLAIN_IDS).size).toBe(EXPLAIN_IDS.length);
     expect(Object.keys(EXPLAIN).sort()).toEqual([...EXPLAIN_IDS].sort());
   });
@@ -94,8 +96,10 @@ describe("explainView values", () => {
   const values = (id: ExplainId, c = ctx) =>
     Object.fromEntries(explainView(id, c).values.map((v) => [v.label, v.value]));
 
-  it("always shows the as-of date, except for curve totals which show the totals themselves", () => {
-    for (const id of EXPLAIN_IDS.filter((i) => i !== "assumptions.curveTotal"))
+  it("shows the as-of date, except for curve totals (the totals themselves) and budget figures (the month)", () => {
+    for (const id of EXPLAIN_IDS.filter(
+      (i) => i !== "assumptions.curveTotal" && !i.startsWith("budget."),
+    ))
       expect(values(id)["As-of date"]).toBe("2026-09-30");
     expect(values("assumptions.curveTotal")["As-of date"]).toBeUndefined();
     expect(values("assumptions.curveTotal")["Curve totals"]).toBe(

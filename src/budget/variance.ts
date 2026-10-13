@@ -17,6 +17,10 @@ export interface CategoryVariance {
 
 export const monthKey = (date: string): string => date.slice(0, 7);
 
+/** The distinct months that have transactions, oldest first. */
+export const monthsOf = (transactions: readonly Transaction[]): string[] =>
+  [...new Set(transactions.map((t) => monthKey(t.date)))].sort();
+
 /** Unbudgeted when budget is 0 and spend is above 0; over beyond the budget; near from 90%; otherwise on track. */
 export function budgetStatus(spendCents: number, budgetCents: number): BudgetStatus {
   if (budgetCents === 0 && spendCents > 0) return "unbudgeted";

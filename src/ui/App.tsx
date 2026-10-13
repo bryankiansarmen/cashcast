@@ -21,7 +21,11 @@ export default function App() {
   }, [state.assumptions]);
   return (
     <AppShell route={route}>
-      {route === "budget" ? <BudgetPage /> : <ForecastPage state={state} dispatch={dispatch} />}
+      {route === "budget" ? (
+        <BudgetPage state={state} dispatch={dispatch} />
+      ) : (
+        <ForecastPage state={state} dispatch={dispatch} />
+      )}
     </AppShell>
   );
 }

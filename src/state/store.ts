@@ -1,5 +1,8 @@
+import type { Budget, CategoryRule, Transaction } from "../budget/types";
+import { monthsOf } from "../budget/variance";
 import { DEFAULT_CURVES, validateCurve } from "../engine/curves";
 import { parseDate } from "../engine/dates";
+import { parseMoneyToCents } from "../engine/money";
 import { DEFAULT_SCENARIOS, validateCustomers, validateScenarios } from "../engine/scenarios";
 import type {
   Assumptions,
@@ -13,6 +16,8 @@ import { importArAging as parseArAging } from "../importers/ar-aging";
 import { MAX_BYTES, oversizeMessage } from "../importers/csv";
 import type { ImportIssue, ImportResult } from "../importers/errors";
 import { importPaymentHistory } from "../importers/payment-history";
+import { importTransactions as parseTransactions } from "../importers/transactions";
+import { generateTransactionSample, SAMPLE_BUDGET, SAMPLE_RULES } from "../sample/budget-sample";
 import { generateArSample } from "../sample/ar-sample";
 import { SAMPLE_AS_OF } from "../sample/constants";
 
@@ -21,7 +26,7 @@ export const MAX_UPLOAD_BYTES = MAX_BYTES;
 export { oversizeMessage };
 export type { ImportIssue };
 
-export type ImportKind = "ar" | "history";
+export type ImportKind = "ar" | "history" | "transactions";
 
 export interface ImportReportData {
   kind: ImportKind;
@@ -44,6 +49,16 @@ export interface State {
   assumptionErrors: Record<string, string>;
   /** Browser storage is blocked, so assumption edits will not persist. */
   storageUnavailable: boolean;
+  transactions: Transaction[];
+  rules: CategoryRule[];
+  budget: Budget;
+  /** The month shown on the Budget page (YYYY-MM). */
+  month: string;
+  txSource: "sample" | "import";
+  /** Result of the latest transactions import; separate from `report` so each page shows its own. */
+  budgetReport: ImportReportData | null;
+  /** Inline messages for rejected budget target edits, keyed `target.<category>`. */
+  budgetErrors: Record<string, string>;
 }
 
 export type Action =
@@ -61,6 +76,11 @@ export type Action =
       text: string;
     }
   | { type: "setCustomer"; key: string; field: "delayWeeks" | "reliability"; text: string }
+  | { type: "importTransactions"; text: string; fileName: string }
+  | { type: "setBudgetTarget"; category: string; text: string }
+  | { type: "selectMonth"; month: string }
+  | { type: "loadBudgetSample" }
+  | { type: "resetBudgetTargets" }
   | { type: "resetAssumptions" }
   | { type: "storageFailed" }
   | { type: "resetAll" };
@@ -77,6 +97,9 @@ export const defaultAssumptions = (): Assumptions => ({
   customers: {},
 });
 
+const sampleBudget = (): Budget => ({ monthlyCents: { ...SAMPLE_BUDGET.monthlyCents } });
+const latestMonth = (txs: readonly Transaction[]): string => monthsOf(txs).at(-1) ?? "";
+
 /** First visit: the seeded sample dataset is already loaded. */
 export const initialState = (): State => ({
   invoices: generateArSample(),
@@ -88,6 +111,13 @@ export const initialState = (): State => ({
   report: null,
   assumptionErrors: {},
   storageUnavailable: false,
+  transactions: generateTransactionSample(),
+  rules: SAMPLE_RULES,
+  budget: sampleBudget(),
+  month: latestMonth(generateTransactionSample()),
+  txSource: "sample",
+  budgetReport: null,
+  budgetErrors: {},
 });
 
 const report = <T>(kind: ImportKind, fileName: string, r: ImportResult<T[]>): ImportReportData =>
@@ -114,8 +144,18 @@ const accept = (state: State, key: string, assumptions: Assumptions): State => {
 /** A failed import only records its report; the loaded dataset is never replaced (INV-11). */
 export function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case "loadSample":
-      return { ...initialState(), assumptions: state.assumptions, scenario: state.scenario };
+    case "loadSample": {
+      // Only the receivables side; budget data, assumptions, and the scenario stay as they are.
+      const sample = initialState();
+      return {
+        ...state,
+        invoices: sample.invoices,
+        history: [],
+        asOf: sample.asOf,
+        source: "sample",
+        report: null,
+      };
+    }
     case "importArAging": {
       const r = parseArAging(action.text, action.asOf);
       const rep = report("ar", action.fileName, r);
@@ -128,18 +168,75 @@ export function reducer(state: State, action: Action): State {
       const rep = report("history", action.fileName, r);
       return r.ok ? { ...state, history: r.value, report: rep } : { ...state, report: rep };
     }
-    case "importRejected":
+    case "importRejected": {
+      const rejected: ImportReportData = {
+        kind: action.kind,
+        fileName: action.fileName,
+        ok: false,
+        count: 0,
+        errors: [{ message: action.message }],
+        warnings: [],
+      };
+      return action.kind === "transactions"
+        ? { ...state, budgetReport: rejected }
+        : { ...state, report: rejected };
+    }
+    case "importTransactions": {
+      const r = parseTransactions(action.text);
+      const rep = report("transactions", action.fileName, r);
+      return r.ok
+        ? {
+            ...state,
+            transactions: r.value,
+            month: latestMonth(r.value),
+            txSource: "import",
+            budgetReport: rep,
+            budgetErrors: {},
+          }
+        : { ...state, budgetReport: rep };
+    }
+    case "setBudgetTarget": {
+      const key = `target.${action.category}`;
+      const text = action.text.trim();
+      const monthlyCents = without(state.budget.monthlyCents, action.category); // a blank target clears it
+      if (text !== "") {
+        const m = parseMoneyToCents(text);
+        if (!m.ok)
+          return {
+            ...state,
+            budgetErrors: {
+              ...state.budgetErrors,
+              [key]: "Enter an amount in dollars, like 250 or 250.50.",
+            },
+          };
+        if (m.value < 0)
+          return {
+            ...state,
+            budgetErrors: { ...state.budgetErrors, [key]: "A target cannot be negative." },
+          };
+        monthlyCents[action.category] = m.value;
+      }
+      return { ...state, budget: { monthlyCents }, budgetErrors: without(state.budgetErrors, key) };
+    }
+    case "selectMonth":
+      return monthsOf(state.transactions).includes(action.month)
+        ? { ...state, month: action.month }
+        : state;
+    case "loadBudgetSample": {
+      const sample = initialState();
       return {
         ...state,
-        report: {
-          kind: action.kind,
-          fileName: action.fileName,
-          ok: false,
-          count: 0,
-          errors: [{ message: action.message }],
-          warnings: [],
-        },
+        transactions: sample.transactions,
+        rules: sample.rules,
+        budget: sample.budget,
+        month: sample.month,
+        txSource: "sample",
+        budgetReport: null,
+        budgetErrors: {},
       };
+    }
+    case "resetBudgetTargets":
+      return { ...state, budget: sampleBudget(), budgetErrors: {} };
     case "setAsOf":
       // Only a real calendar date in ISO form is accepted; anything else leaves the as-of date unchanged.
       return isIsoDate(action.asOf) ? { ...state, asOf: action.asOf } : state;
